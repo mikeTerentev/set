@@ -78,7 +78,6 @@ TEST(correctness, erase_end) {
 
 TEST(correctness, empty) {
     set<int> s;
-    set<int> a = s;
     ASSERT_TRUE(s.empty());
 }
 
@@ -524,6 +523,23 @@ void assert_unique(const set<int> &s) {
     }
 }
 
+TEST(correctness, insert) {
+    set<int> v;
+    for (int i = 1; i < 1000; i++) {
+        auto res = v.insert(i);
+        ASSERT_TRUE(res.second);
+    }
+
+    auto it = v.begin();
+    for (int i = 1; i < 1000; i++) {
+        ASSERT_EQ(i, *it);
+        ++it;
+    }
+    ASSERT_EQ(v.end(), it);
+
+    assert_unique(v);
+}
+
 TEST(correctness, std_iterators) {
     set<int> v;
     v.insert(1);
@@ -538,6 +554,42 @@ TEST(correctness, std_iterators) {
     ASSERT_EQ(1, *it);
 }
 
+TEST(correctness, insert_nonunique) {
+    set<int> v;
+    v.insert(1);
+    v.insert(2);
+    v.insert(3);
+    auto res = v.insert(3);
+    ASSERT_FALSE(res.second);
+
+    v.insert(-1);
+    v.insert(-2);
+
+    ASSERT_EQ(-2, *v.begin());
+    ASSERT_EQ(-1, *++v.begin());
+    ASSERT_EQ(1, *++ ++v.begin());
+
+    assert_unique(v);
+}
+
+TEST(correctness, find1) {
+    std::vector<int> k;
+    for (int i = 0; i < 1000; i++) k.push_back(i);
+
+    std::shuffle(k.begin(), k.end(), std::default_random_engine());
+
+    set<int> v;
+    for (int i : k) {
+        auto res = v.insert(i);
+        ASSERT_TRUE(res.second);
+    }
+
+    for (int i = 0; i < 1000; i++) {
+        ASSERT_NE(v.end(), v.find(i));
+    }
+    ASSERT_EQ(v.end(), v.find(2000));
+    ASSERT_EQ(v.end(), v.find(-2000));
+}
 
 TEST(correctness, lower_bound1) {
     std::vector<int> k;
@@ -548,6 +600,7 @@ TEST(correctness, lower_bound1) {
     set<int> v;
     for (int i : k) {
         auto res = v.insert(i);
+        ASSERT_TRUE(res.second);
     }
 
     for (int i = 0; i < 1000; i += 2) {
@@ -570,6 +623,7 @@ TEST(correctness, upper_bound1) {
     set<int> v;
     for (int i : k) {
         auto res = v.insert(i);
+        ASSERT_TRUE(res.second);
     }
 
     for (int i = 0; i < 1000; i += 2) {
@@ -619,3 +673,4 @@ TEST(correctness, swap_self_e) {
     ASSERT_EQ(1, *s.begin());
     ASSERT_EQ(3, *++s.begin());
 }
+

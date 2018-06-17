@@ -185,16 +185,16 @@ public:
     }
 
 
-    iterator insert(T const &x) {
+    std::pair<iterator, bool> insert(T const &x) {
         if (empty()) {
             root.l = new Element(nullptr, nullptr, root_ptr, x);
-            return iterator(root.l);
+            return {iterator(root.l),1};
         }
-        Element *result = go_insert(dynamic_cast<Element *>(root.l), x);
-        if (result == nullptr) {
-            return iterator(root_ptr);
+        auto result = go_insert(dynamic_cast<Element *>(root.l), x);
+        if (result.first == nullptr) {
+            return {iterator(root_ptr),result.second};
         }
-        return iterator(result);
+        return {iterator(result.first),result.second};
     }
 
     iterator erase(iterator toErase) {
@@ -254,8 +254,8 @@ public:
         return reverse_iterator(end());
     }
 
-    reverse_iterator rbegin() const {
-        return reverse_iterator(end());
+    const_reverse_iterator rbegin() const {
+        return const_reverse_iterator(end());
     }
 
     iterator end() {
@@ -306,7 +306,7 @@ private:
     };
 
 //+
-    Element *go_insert(Element *node, T const &x) {
+    std::pair<Element *,bool>go_insert(Element *node, T const &x) {
         while (node != nullptr) {
             if (x < node->value) {
                 if (node->l != nullptr) {
@@ -314,7 +314,7 @@ private:
                 } else {
                     Element *inserted = new Element(nullptr, nullptr, node, x);
                     node->l = inserted;
-                    return inserted;
+                    return {inserted,1};
                 }
             }
 
@@ -324,14 +324,14 @@ private:
                 } else {
                     Element *inserted = new Element(nullptr, nullptr, node, x);
                     node->r = inserted;
-                    return inserted;
+                    return {inserted,1};
                 }
             }
             if (x == node->value) {
-                return nullptr;
+                return {nullptr,0};
             }
         }
-        return nullptr;
+         return {nullptr,0};;
     };
 
 //+
