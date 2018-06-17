@@ -697,11 +697,72 @@ TEST(correctness, erase_root) {
     expect_eq(s, {1, 2, 3, 8});
 }
 
-/*TEST(erase, erase_!) {
-    set<int> s;
-    s.insert(1);
-    s.insert(3);
+struct dummy {
+    int x;
 
-    5381279 10 11 12
-    erase(find(8));
-}*/
+    dummy() = delete;
+    dummy(int x) : x(x) {}
+
+    friend bool operator<(const dummy &a, const dummy &b) { return a.x < b.x; }
+    friend bool operator==(const dummy &a, const dummy &b) { return a.x == b.x; }
+};
+
+TEST(correctness, no_def_constructor) {
+    set<dummy> s;
+    s.insert(dummy(1));
+
+    ASSERT_EQ(1, (*s.begin()).x);
+}
+
+
+struct dummy_ex {
+    int x;
+
+    dummy_ex() = delete;
+    dummy_ex(int x) : x(x) {}
+
+    friend bool operator<(const dummy_ex &a, const dummy_ex &b) {
+        throw std::runtime_error("exception");
+    }
+};
+
+TEST(exceptions, less_operator) {
+    try {
+        set<dummy_ex> s;
+        s.insert(dummy_ex(1));
+        s.find(1);
+    } catch (...) {
+    }
+    try {
+        set<dummy_ex> s;
+        s.insert(dummy_ex(1));
+        s.lower_bound(dummy_ex(1));
+    } catch (...) {
+    }
+    try {
+        set<dummy_ex> s;
+        s.insert(dummy_ex(1));
+        s.upper_bound(dummy_ex(1));
+    } catch (...) {
+    }
+}
+
+TEST(exceptions, no_throw) {
+    set<dummy_ex> s;
+    std::pair<set<dummy_ex>::iterator, bool> it;
+    it.second = 0;
+    try {
+        it = s.insert(dummy_ex(1));
+    } catch (...) {
+    }
+    try {
+        set<dummy_ex> s1;
+        s.erase(it.first);
+        s.empty();
+        s.insert(dummy_ex(2));
+        s.clear();
+    } catch (...) {
+        ASSERT_TRUE(false);
+    }
+
+}
