@@ -6,7 +6,7 @@
 #define SET_SET_H
 
 #include <iostream>
-
+#include <cassert>
 template<typename T>
 class set;
 
