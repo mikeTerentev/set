@@ -234,7 +234,7 @@ public:
         return lower_bound(x);
     }
 
-    const_iterator begin() {
+    iterator begin() {
         if (empty()) {
             return iterator(root_ptr);
         }
