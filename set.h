@@ -156,7 +156,8 @@ public:
 public:
     friend void swap<T>(set &frst, set &sec) noexcept;
 
-    set() = default;
+    set() noexcept {
+    }
 
     set(set const &other) : Neutral() {
         root.l = makeNode(dynamic_cast<Element *>(other.root.l), root_ptr);

@@ -1,6 +1,4 @@
-//
-//Created by mikeTerentev
-//
+
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
@@ -9,6 +7,7 @@
 #include <utility>
 #include <gtest/gtest.h>
 #include <iterator>
+#include <random>
 
 #include "set.h"
 
@@ -118,7 +117,6 @@ TEST(correctness, reverse_iterator_rbeg_to_rend) {
     auto b_it = b.rbegin();
 
     for (; a_it != a.rend() && b_it != b.rend(); ++a_it, ++b_it) {
-//        std::cerr << (*a_it) << std::endl;
         ASSERT_EQ(*a_it, *b_it);
     }
 }
@@ -297,13 +295,6 @@ TEST(correctness, swap) {
     mass_push_back(c1, {1, 2, 3, 4});
     mass_push_back(c2, {5, 6, 7, 8});
     swap(c1, c2);
-    auto a_it = c1.begin();
-    auto b_it = c2.begin();
-    for (; a_it != c1.end() && b_it != c2.end(); ++a_it, ++b_it) {
-             std::cout<<*a_it<<" ";
-        //ASSERT_EQ(*a_it, *b_it);
-    }
-     std::cout<<std::endl;
     expect_eq(c1, {5, 6, 7, 8});
     expect_eq(c2, {1, 2, 3, 4});
 }
@@ -436,14 +427,12 @@ TEST(correctness, upper_bound) {
     EXPECT_EQ(c.upper_bound(3), (--c.end()));
 }
 
-template <typename T>
-T const& as_const(T& obj)
-{
+template<typename T>
+T const &as_const(T &obj) {
     return obj;
 }
 
-TEST(correctness, iterator_conversions)
-{
+TEST(correctness, iterator_conversions) {
     set<int> c;
     set<int>::const_iterator i1 = c.begin();
     set<int>::iterator i2 = c.end();
@@ -484,8 +473,7 @@ TEST(correctness, iterator_conversions)
     EXPECT_FALSE(as_const(i2) != as_const(i2));
 }
 
-TEST(correctness, iterators_postfix)
-{
+TEST(correctness, iterators_postfix) {
 
     set<int> s;
     mass_push_back(s, {1, 2, 3});
@@ -505,8 +493,7 @@ TEST(correctness, iterators_postfix)
     EXPECT_EQ(s.end(), j);
 }
 
-TEST(correctness, const_iterators_postfix)
-{
+TEST(correctness, const_iterators_postfix) {
 
     set<int> s;
     mass_push_back(s, {1, 2, 3});
@@ -524,4 +511,110 @@ TEST(correctness, const_iterators_postfix)
     j = i--;
     EXPECT_EQ(3, *i);
     EXPECT_TRUE(j == s.end());
+}
+
+
+void assert_unique(const set<int> &s) {
+    std::vector<int> c;
+    for (int i : s) {
+        ASSERT_TRUE(std::find(c.begin(), c.end(), i) == c.end());
+
+        c.push_back(i);
+    }
+}
+
+TEST(correctness, std_iterators) {
+    set<int> v;
+    v.insert(1);
+    v.insert(2);
+    v.insert(3);
+
+    auto it = std::begin(v);
+    ASSERT_EQ(1, *it);
+    it = std::next(it);
+    ASSERT_EQ(2, *it);
+    it = std::prev(it);
+    ASSERT_EQ(1, *it);
+}
+
+
+TEST(correctness, lower_bound1) {
+    std::vector<int> k;
+    for (int i = 0; i < 1000; i += 2) k.push_back(i);
+
+    std::shuffle(k.begin(), k.end(), std::default_random_engine());
+
+    set<int> v;
+    for (int i : k) {
+        auto res = v.insert(i);
+    }
+
+    for (int i = 0; i < 1000; i += 2) {
+        ASSERT_EQ(i, *v.lower_bound(i));
+    }
+    ASSERT_EQ(0, *v.lower_bound(-1));
+    ASSERT_EQ(0, *v.lower_bound(-500));
+    ASSERT_EQ(2, *v.lower_bound(1));
+    ASSERT_EQ(100, *v.lower_bound(99));
+    ASSERT_EQ(v.end(), v.lower_bound(1001));
+    ASSERT_EQ(v.end(), v.lower_bound(1000000));
+}
+
+TEST(correctness, upper_bound1) {
+    std::vector<int> k;
+    for (int i = 0; i < 1000; i += 2) k.push_back(i);
+
+    std::shuffle(k.begin(), k.end(), std::default_random_engine());
+
+    set<int> v;
+    for (int i : k) {
+        auto res = v.insert(i);
+    }
+
+    for (int i = 0; i < 1000; i += 2) {
+        if (v.upper_bound(i) == v.end()) {
+            break;
+        }
+        EXPECT_EQ(i + 2, *v.upper_bound(i));
+    }
+}
+
+TEST(correctness, empty_e) {
+    set<int> s;
+    ASSERT_TRUE(s.empty());
+
+    s.insert(1);
+    ASSERT_FALSE(s.empty());
+}
+
+TEST(correctness, swap_e) {
+    set<int> s;
+    s.insert(1);
+    s.insert(3);
+    s.insert(5);
+
+    set<int> s2;
+    s2.insert(2);
+    s2.insert(4);
+
+    swap(s, s2);
+    ASSERT_EQ(2, *s.begin());
+    ASSERT_EQ(4, *++s.begin());
+
+    ASSERT_EQ(1, *s2.begin());
+
+    assert_unique(s);
+    assert_unique(s2);
+}
+
+TEST(correctness, swap_self_e) {
+    set<int> s;
+    s.insert(1);
+    s.insert(3);
+
+    swap(s, s);
+
+    assert_unique(s);
+    ASSERT_EQ(1, *s.begin());
+    ASSERT_EQ(3, *++s.begin());
 }
