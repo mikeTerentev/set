@@ -61,6 +61,40 @@ private:
                                                                                                r_child,
                                                                                                parent),
                                                                                        value(_data) {}
+
+        friend void swap(Element *frst, Element *sec) {
+            Element f_node(*frst);
+            Element sec_node(*sec);
+            if (sec_node.p != nullptr) {
+                if (sec_node.p->l == sec) {
+                    sec_node.p->l = frst;
+                } else {
+                    sec_node.p->r = frst;
+                }
+            }
+            if (f_node.p != nullptr) {
+                if (f_node.p->l == frst) {
+                    f_node.p->l = sec;
+                } else {
+                    f_node.p->r = sec;
+                }
+            }
+            if (f_node.r != nullptr)
+                f_node.r->p = sec;
+
+            if (sec_node.r != nullptr)
+                sec_node.r->p = frst;
+
+            if (f_node.l != nullptr)
+                f_node.l->p = sec;
+
+            if (sec_node.l != nullptr)
+                sec_node.l->p = frst;
+
+            std::swap(sec->p, frst->p);
+            std::swap(sec->r, frst->r);
+            std::swap(sec->l, frst->l);
+        }
     };
 
     Neutral root;
@@ -174,9 +208,49 @@ public:
         return *this;
     }
 
+    iterator erase_impl(Neutral *ersed_node) {
+        iterator tmp_it(ersed_node);
+        tmp_it++;
+        if (ersed_node->r == nullptr) {
+            if (ersed_node->p != nullptr) {
+                if (ersed_node->p->r == ersed_node) {
+                    ersed_node->p->r = ersed_node->l;
+                } else {
+                    ersed_node->p->l = ersed_node->l;
+                }
+            }
+            if (ersed_node->l != nullptr) {
+                ersed_node->l->p = ersed_node->p;
+            }
+            delete ersed_node;
+        } else if (ersed_node->l == nullptr) {
+            if (ersed_node->p != nullptr) {
+                if (ersed_node->p->r == ersed_node) {
+                    ersed_node->p->r = ersed_node->r;
+                } else {
+                    ersed_node->p->l = ersed_node->r;
+                }
+            }
+            ersed_node->r->p = ersed_node->p;
+            delete ersed_node;
+        } else {
+            Neutral *goer = ersed_node->l;
+            while (goer->r != nullptr) {
+                goer = goer->r;
+            }
+            swap(static_cast<Element *>(goer), static_cast<Element *>(ersed_node));
+            erase_impl(ersed_node);
+        }
+        return tmp_it;
+    }
 
     ~set() {
         clear();
+    }
+
+    iterator erase(const_iterator itror) {
+        assert(itror != end());
+        return erase_impl(static_cast<Element *>(itror.it_ptr));
     }
 
     void clear() noexcept {
@@ -192,7 +266,8 @@ public:
     std::pair<iterator, bool> insert(T const &x) {
         if (empty()) {
             root.l = new Element(nullptr, nullptr, root_ptr, x);
-            return {iterator(root.l), 1};
+            return {
+                    iterator(root.l), 1};
         }
         auto result = go_insert(dynamic_cast<Element *>(root.l), x);
         if (result.first == nullptr) {
@@ -201,12 +276,6 @@ public:
         return {iterator(result.first), result.second};
     }
 
-    iterator erase(iterator toErase) {
-        iterator result(toErase);
-        ++result;
-        eraseNode(dynamic_cast<Element *>(toErase.it_ptr), *(toErase));
-        return result;
-    }
 
     iterator find(T const &x) const {
         Element *result = search(dynamic_cast<Element *>(root.l), x);
@@ -303,10 +372,8 @@ private:
         if (node == nullptr || v == node->value) {
             return node;
         }
-        if (v < node->value) {
-            return search(dynamic_cast<Element *>(node->l), v);
-        }
-        return search(dynamic_cast<Element *>(node->r), v);
+        if ((v >= node->value)) return search(dynamic_cast<Element *>(node->r), v);
+        return search(dynamic_cast<Element *>(node->l), v);
     };
 
 //+
@@ -335,70 +402,16 @@ private:
                 return {nullptr, 0};
             }
         }
-        return {nullptr, 0};;
+        return {nullptr, 0};
+        return {nullptr, 0};
     };
 
 //+
-    Element *eraseNode(Element *node, T const &x) {
-        if (node == nullptr) {
-            return node;
-        }
-        if (x < node->value) {
-            node->l = eraseNode(dynamic_cast<Element *>(node->l), x);
-            if (node->l != nullptr) {
-                node->l->p = node;
-            }
-        }
-        if (x > node->value) {
-            node->r = eraseNode(dynamic_cast<Element *>(node->r), x);
-            if (node->r != nullptr) {
-                node->r->p = node;
-            }
-        }
-        if (x == node->value) {
-            if (node->l != nullptr && node->r != nullptr) {
-                node->value = dynamic_cast<Element *>(get_min(node->r))->value;
-                node->r = eraseNode(dynamic_cast<Element *>(node->r), node->value);
-                if (node->r != nullptr) {
-                    node->r->p = node;
-                }
-            } else if (node->l != nullptr) {
-                Element *tmp = dynamic_cast<Element *>(node->l);
-                tmp->p = node->p;
-                if (node->p->l == node) {
-                    node->p->l = tmp;
-                } else {
-                    node->p->r = tmp;
-                }
-                delete node;
-                node = nullptr;
-            } else if (node->r != nullptr) {
-                Element *temp = dynamic_cast<Element *>(node->r);
-                temp->p = node->p;
-                if (node->p->l == node) {
-                    node->p->l = temp;
-                } else {
-                    node->p->r = temp;
-                }
-                delete node;
-                node = nullptr;
-            } else {
-                if (node->p->l == node) {
-                    node->p->l = nullptr;
-                } else {
-                    node->p->r = nullptr;
-                }
-                delete node;
-                node = nullptr;
-            }
-        }
-        return node;
-    };
+
 
     Element *go_lowerBound(Element *node, T const &x) const {
         if (node == nullptr || node->value == x)
             return node;
-
         if (node->value < x)
             return go_lowerBound(dynamic_cast<Element *>(node->r), x);
 

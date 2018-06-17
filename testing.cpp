@@ -197,6 +197,7 @@ TEST(correctness, find) {
     ASSERT_EQ(*a.find(3), 3);
     ASSERT_EQ(*a.find(4), 4);
 }
+/*
 
 TEST(correctness, erase) {
     set<int> a;
@@ -217,6 +218,7 @@ TEST(correctness, erase) {
     ASSERT_EQ(a.erase(a.find(5)), a.end());
     ASSERT_EQ(a.find(5), a.end());
 }
+*/
 
 TEST(correctness, random) {
     std::set<int> a;
@@ -687,22 +689,12 @@ TEST(correctness, swap_self_e) {
     ASSERT_EQ(1, *s.begin());
     ASSERT_EQ(3, *++s.begin());
 }
+TEST(correctness, erase_root) {
+    set<int> s;
+    mass_push_back(s, {5, 3, 8, 1, 2});
+    s.erase(s.find(5));
 
-struct dummy {
-    int x;
-
-    dummy() = delete;
-    dummy(int x) : x(x) {}
-
-    friend bool operator<(const dummy &a, const dummy &b) { return a.x < b.x; }
-    friend bool operator==(const dummy &a, const dummy &b) { return a.x == b.x; }
-};
-
-TEST(correctness, no_def_constructor) {
-    set<dummy> s;
-    s.insert(dummy(1));
-
-    ASSERT_EQ(1, (*s.begin()).x);
+    expect_eq(s, {1, 2, 3, 8});
 }
 
 /*TEST(erase, erase_!) {
