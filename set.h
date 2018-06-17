@@ -163,8 +163,10 @@ public:
     set() noexcept {
     }
 
-    set(set const &other) {
-        root.l = makeNode(dynamic_cast<Element *>(other.root.l), root_ptr);
+    set(set const &other) : set() {
+        for (const auto &node : other) {
+            insert(node);
+        }
     }
 
     set &operator=(set const &other) {

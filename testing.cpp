@@ -32,6 +32,16 @@ void expect_eq(It i1, It e1, std::initializer_list<T> elems) {
         ++i2;
     }
 }
+TEST(eqv, eq) {
+    set<int> s;
+    s.insert(1);
+    s.insert(3);
+    s.insert(4);
+    set<int> s2 = s;
+    ASSERT_EQ(*s.begin(), *s.begin());
+    ASSERT_EQ(*++s2.begin(), *++s2.begin());
+    ASSERT_EQ(*--s2.end(), *--s2.end());
+}
 
 template<typename C, typename T>
 void expect_eq(C const &c, std::initializer_list<T> elems) {
@@ -672,10 +682,4 @@ TEST(correctness, swap_self_e) {
     assert_unique(s);
     ASSERT_EQ(1, *s.begin());
     ASSERT_EQ(3, *++s.begin());
-}
-TEST(correctness, erase5) {
-    set<int> s;
-    mass_push_back(s, {5, 2, 10, 6, 14, 7, 8});
-    s.erase(s.find(5));
-    expect_eq(s, {2, 6, 7, 8, 10, 14});
 }
