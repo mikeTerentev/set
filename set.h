@@ -8,31 +8,31 @@
 #include <iostream>
 
 template<typename T>
-class my_set;
+class set;
 
 //typedef std::shared_ptr<Element> node_ptr;
 //ROOT is NEUTRAL ELEMENT
 template<typename T>
-void swap(my_set<T> &frst, my_set<T> &sec) noexcept {
+void swap(set<T> &frst, set<T> &sec) noexcept {
     using std::swap;
     swap(frst.root, sec.root);
     if (sec.root.l != nullptr) {
-        sec.root.l->p = frst.root_ptr;
+        sec.root.l->p = sec.root_ptr;
     }
     if (frst.root.l != nullptr) {
-        frst.root.l->p = sec.root_ptr;
+        frst.root.l->p = frst.root_ptr;
     }
 }
 
 template<typename T>
-class my_set {
+class set {
 
 ///////NODES///////
 private:
     struct Neutral {
-        Neutral *l;
+        Neutral *l = nullptr;
 
-        Neutral *r;
+        Neutral *r = nullptr;
 
         Neutral *p;
 
@@ -67,13 +67,12 @@ private:
     Neutral *root_ptr = &root;
 
 public:
-
-    friend void swap<T>(my_set<T> &frst, my_set<T> &sec) noexcept;
+    friend void swap<T>(set<T> &frst, set<T> &sec) noexcept;
 
 /////ITERATOR////
     template<typename Z>
     struct Set_iterator : public std::iterator<std::bidirectional_iterator_tag, Z> {
-        friend struct my_set<T>;
+        friend struct set<T>;
 
         Set_iterator() = delete;
 
@@ -155,28 +154,30 @@ public:
 //////////
 
 public:
-    friend void swap<T>(my_set &frst, my_set &b) noexcept;
+    friend void swap<T>(set &frst, set &sec) noexcept;
 
-    my_set() = default;
+    set() = default;
 
-    my_set(my_set const &other) : Neutral() {
-        root.l = makeNode(get_l(other.root_ptr), root_ptr);
+    set(set const &other) : Neutral() {
+        root.l = makeNode(dynamic_cast<Element *>(other.root.l), root_ptr);
     }
 
-    my_set &operator=(my_set const &other) {
-        my_set temp(other);
+    set &operator=(set const &other) {
+        set temp(other);
         swap(*this, temp);
         return *this;
     }
 
-    void clear() {
-        deleteNode(root.l);
-    }
 
-    ~my_set() {
+    ~set() {
         clear();
     }
 
+    void clear() noexcept {
+        for (auto e = begin(); e != end();) {
+            e = erase(e);
+        }
+    }
 
     bool empty() const {
         return root.l == nullptr;
@@ -188,44 +189,44 @@ public:
             root.l = new Element(nullptr, nullptr, root_ptr, x);
             return iterator(root.l);
         }
-        Element *result = go_insert(get_l(root_ptr), x);
+        Element *result = go_insert(dynamic_cast<Element *>(root.l), x);
         if (result == nullptr) {
             return iterator(root_ptr);
         }
         return iterator(result);
     }
 
-    iterator erase(const_iterator erased_it) {
-        iterator result(erased_it);
+    iterator erase(iterator toErase) {
+        iterator result(toErase);
         ++result;
-        go_erase(dynamic_cast<Element *>(erased_it.it_ptr), *(erased_it));
+        eraseNode(dynamic_cast<Element *>(toErase.it_ptr), *(toErase));
         return result;
     }
 
-    const_iterator find(T const &x) const {
-        Element *result = search(get_l(root_ptr), x);
+    iterator find(T const &x) const {
+        Element *result = search(dynamic_cast<Element *>(root.l), x);
         if (result == nullptr) {
-            return const_iterator(root_ptr);
+            return iterator(root_ptr);
         }
-        return const_iterator(result);
+        return iterator(result);
     }
 
-    const_iterator lower_bound(T const &x) const {
+    iterator lower_bound(T const &x) const {
         if (empty()) {
-            return const_iterator(root_ptr);
+            return iterator(root_ptr);
         }
-        Element *result = go_lowerBound(get_l(root_ptr), x);
+        Element *result = go_lowerBound(dynamic_cast<Element *>(root.l), x);
         if (result == nullptr) {
-            return const_iterator(root_ptr);
+            return iterator(root_ptr);
         }
-        return const_iterator(result);
+        return iterator(result);
     }
 
-    const_iterator upper_bound(T const &x) const {
+    iterator upper_bound(T const &x) const {
         if (empty()) {
-            return const_iterator(root_ptr);
+            return iterator(root_ptr);
         }
-        const_iterator result = find(x);
+        iterator result = find(x);
         if (result != end()) {
             return ++result;
         }
@@ -273,14 +274,6 @@ public:
     }
 
 private:
-    Element *get_r(Neutral *node) const {
-        return dynamic_cast<Element *>(node->r);
-    }
-
-    Element *get_l(Neutral *node) const {
-        return dynamic_cast<Element *>(node->l);
-    }
-
     void deleteNode(Neutral *node) {
         if (node == nullptr) {
             return;
@@ -295,8 +288,8 @@ private:
             return nullptr;
         }
         Element *cur = new Element(parent, nullptr, nullptr, node->value);
-        cur->l = makeNode(get_l(node), cur);
-        cur->r = makeNode(get_r(node), cur);
+        cur->l = makeNode(dynamic_cast<Element *>(node->l), cur);
+        cur->r = makeNode(dynamic_cast<Element *>(node->r), cur);
         return cur;
     };
 
@@ -306,9 +299,9 @@ private:
             return node;
         }
         if (v < node->value) {
-            return search(get_l(node), v);
+            return search(dynamic_cast<Element *>(node->l), v);
         }
-        return search(get_r(node), v);
+        return search(dynamic_cast<Element *>(node->r), v);
     };
 
 //+
@@ -316,7 +309,7 @@ private:
         while (node != nullptr) {
             if (x < node->value) {
                 if (node->l != nullptr) {
-                    node = get_l(node);
+                    node = dynamic_cast<Element *>(node->l);
                 } else {
                     Element *inserted = new Element(nullptr, nullptr, node, x);
                     node->l = inserted;
@@ -326,7 +319,7 @@ private:
 
             if (x > node->value) {
                 if (node->r != nullptr) {
-                    node = get_r(node);
+                    node = dynamic_cast<Element *>(node->r);
                 } else {
                     Element *inserted = new Element(nullptr, nullptr, node, x);
                     node->r = inserted;
@@ -341,18 +334,18 @@ private:
     };
 
 //+
-    Element *go_erase(Element *node, T const &x) {
+    Element *eraseNode(Element *node, T const &x) {
         if (node == nullptr) {
             return node;
         }
         if (x < node->value) {
-            node->l = go_erase(get_l(node), x);
+            node->l = eraseNode(dynamic_cast<Element *>(node->l), x);
             if (node->l != nullptr) {
                 node->l->p = node;
             }
         }
         if (x > node->value) {
-            node->r = go_erase(get_r(node), x);
+            node->r = eraseNode(dynamic_cast<Element *>(node->r), x);
             if (node->r != nullptr) {
                 node->r->p = node;
             }
@@ -360,12 +353,12 @@ private:
         if (x == node->value) {
             if (node->l != nullptr && node->r != nullptr) {
                 node->value = dynamic_cast<Element *>(get_min(node->r))->value;
-                node->r = go_erase(get_r(node), node->value);
+                node->r = eraseNode(dynamic_cast<Element *>(node->r), node->value);
                 if (node->r != nullptr) {
                     node->r->p = node;
                 }
             } else if (node->l != nullptr) {
-                Element *tmp = get_l(node);
+                Element *tmp = dynamic_cast<Element *>(node->l);
                 tmp->p = node->p;
                 if (node->p->l == node) {
                     node->p->l = tmp;
@@ -375,7 +368,7 @@ private:
                 delete node;
                 node = nullptr;
             } else if (node->r != nullptr) {
-                Element *temp = get_r(node);
+                Element *temp = dynamic_cast<Element *>(node->r);
                 temp->p = node->p;
                 if (node->p->l == node) {
                     node->p->l = temp;
@@ -402,9 +395,9 @@ private:
             return node;
 
         if (node->value < x)
-            return go_lowerBound(get_r(node), x);
+            return go_lowerBound(dynamic_cast<Element *>(node->r), x);
 
-        Element *ans = go_lowerBound(get_l(node), x);
+        Element *ans = go_lowerBound(dynamic_cast<Element *>(node->l), x);
 
         if (ans != nullptr && ans->value >= x) return ans;
         return node;

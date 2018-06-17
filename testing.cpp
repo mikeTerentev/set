@@ -1,25 +1,86 @@
 #include <algorithm>
-#include "my_set.h"
+#include <cassert>
+#include <cstdlib>
+#include <vector>
+#include <string>
+#include <utility>
 #include <gtest/gtest.h>
+#include <iterator>
 
-using namespace std;
+#include "set.h"
 
-template <typename It1, typename It2>
-void assert_range_equality(It1 f1, It1 l1, It2 f2, It2 l2) {
-    for (; f1 != l1 and f2 != l2; ++f1, ++f2) {
-        cout<<*f1<<" "<<*f2<<"\n";
-        ASSERT_EQ(*f1, *f2);
+template<typename C, typename T>
+void mass_push_back(C &c, std::initializer_list<T> elems) {
+    for (T const &e : elems)
+        c.insert(e);
+}
+
+template<typename It, typename T>
+void expect_eq(It i1, It e1, std::initializer_list<T> elems) {
+    auto i2 = elems.begin(), e2 = elems.end();
+
+    for (;;) {
+        if (i1 == e1 || i2 == e2) {
+            EXPECT_TRUE(i1 == e1 && i2 == e2);
+            break;
+        }
+
+        EXPECT_EQ(*i2, *i1);
+        ++i1;
+        ++i2;
     }
-    ASSERT_TRUE(f1 == l1 and f2 == l2);
+}
+
+template<typename C, typename T>
+void expect_eq(C const &c, std::initializer_list<T> elems) {
+    expect_eq(c.begin(), c.end(), elems);
+}
+
+template<typename C, typename T>
+void expect_reverse_eq(C const &c, std::initializer_list<T> elems) {
+    expect_eq(c.rbegin(), c.rend(), elems);
+}
+
+TEST(correctness, simple_order) {
+    set<int> s;
+    std::vector<int> res = {10, 3, 1};
+    s.insert(3);
+    s.insert(10);
+    s.insert(1);
+    for (auto x : s) {
+        EXPECT_EQ(res.back(), x);
+        res.pop_back();
+    }
+}
+
+TEST(iterators, rbegin_inc) {
+    set<int> s;
+    s.insert(5);
+    s.insert(3);
+    s.insert(4);
+    s.insert(11);
+    s.insert(8);
+    auto it = s.rbegin();
+    EXPECT_EQ(11, *it);
+    it++;
+    EXPECT_EQ(8, *it);
+}
+
+TEST(correctness, erase_end) {
+    set<int> l;
+    auto i = l.end();
+    l.insert(42);
+    --i;
+    EXPECT_EQ(42, *i);
 }
 
 TEST(correctness, empty) {
-    my_set<int> s;
+    set<int> s;
     ASSERT_TRUE(s.empty());
 }
 
 TEST(correctness, 3_4_5) {
-    my_set<int> a;
+    set<int> a;
     std::set<int> b;
     a.insert(5);
     a.insert(3);
@@ -31,13 +92,12 @@ TEST(correctness, 3_4_5) {
     auto a_it = a.begin();
     auto b_it = b.begin();
     for (; a_it != a.end() && b_it != b.end(); ++a_it, ++b_it) {
-        ASSERT_EQ(*a_it, *b_it);
+        EXPECT_EQ(*b_it, *a_it);
     }
 }
 
-
 TEST(correctness, reverse_iterator_rbeg_to_rend) {
-    my_set<int> a;
+    set<int> a;
     std::set<int> b;
     a.insert(5);
     a.insert(3);
@@ -53,14 +113,15 @@ TEST(correctness, reverse_iterator_rbeg_to_rend) {
     b.insert(20);
     auto a_it = a.rbegin();
     auto b_it = b.rbegin();
+
     for (; a_it != a.rend() && b_it != b.rend(); ++a_it, ++b_it) {
+//        std::cerr << (*a_it) << std::endl;
         ASSERT_EQ(*a_it, *b_it);
     }
 }
 
-
 TEST(correctness, reverse_iterator_rend_to_rbeg) {
-    my_set<int> a;
+    set<int> a;
     std::set<int> b;
     a.insert(5);
     a.insert(3);
@@ -83,9 +144,8 @@ TEST(correctness, reverse_iterator_rend_to_rbeg) {
     }
 }
 
-
 TEST(correctness, iter_down) {
-    my_set<int> a;
+    set<int> a;
     std::set<int> b;
     a.insert(5);
     a.insert(3);
@@ -111,7 +171,7 @@ TEST(correctness, iter_down) {
 }
 
 TEST(correctness, find) {
-    my_set<int> a;
+    set<int> a;
     a.insert(5);
     a.insert(3);
     a.insert(4);
@@ -124,7 +184,7 @@ TEST(correctness, find) {
 }
 
 TEST(correctness, erase) {
-    my_set<int> a;
+    set<int> a;
     a.insert(5);
     a.insert(3);
     a.insert(4);
@@ -142,24 +202,12 @@ TEST(correctness, erase) {
     ASSERT_EQ(a.erase(a.find(5)), a.end());
     ASSERT_EQ(a.find(5), a.end());
 }
-/*
-TEST(correctness, size)
-{
-    my_set a;
-    ASSERT_EQ(a.size(), 0);
-    a.insert(5);
-    ASSERT_EQ(a.size(), 1);
-    a.insert(3);
-    ASSERT_EQ(a.size(), 2);
-    a.insert(4);
-    ASSERT_EQ(a.size(), 3);
-}*/
 
 TEST(correctness, random) {
     std::set<int> a;
-    my_set<int> b;
+    set<int> b;
 
-    for (int i = 0,j=100; i < 100; i++,j--) {
+    for (int i = 0, j = 100; i < 100; i++, j--) {
         a.insert(i);
         a.insert(j);
         b.insert(i);
@@ -172,7 +220,7 @@ TEST(correctness, random) {
             ++it;
         }
         int x = *it;
-        ASSERT_EQ(*(a.find(x)),*(b.find(x)));
+        ASSERT_EQ(*(a.find(x)), *(b.find(x)));
         //cout<<x<<"|";
         a.erase(a.find(x));
         b.erase(b.find(x));
@@ -180,14 +228,14 @@ TEST(correctness, random) {
     auto a_it = a.begin();
     auto b_it = b.begin();
     for (; a_it != a.end() && b_it != b.end(); ++a_it, ++b_it) {
-   //     std::cout<<*a_it<<" ";
+        //     std::cout<<*a_it<<" ";
         ASSERT_EQ(*a_it, *b_it);
     }
-   // std::cout<<endl;
+    // std::cout<<endl;
 }
 
 TEST(iterators, const_iterator) {
-    my_set<int> x;
+    set<int> x;
 
     x.insert(5);
     x.insert(3);
@@ -196,14 +244,14 @@ TEST(iterators, const_iterator) {
     x.insert(20);
     x.insert(30);
 
-    my_set<int>::const_iterator it(x.begin());
+    set<int>::const_iterator it(x.begin());
     ASSERT_EQ(*it, 3);
     it++;
     ASSERT_EQ(*it, 4);
 }
 
 TEST(iterators, const_iterator_cast) {
-    my_set<int> x;
+    set<int> x;
 
     x.insert(5);
     x.insert(3);
@@ -212,12 +260,11 @@ TEST(iterators, const_iterator_cast) {
     x.insert(20);
     x.insert(30);
 
-    my_set<int>::iterator z(x.begin());
-    my_set<int>::const_iterator n(z);
-    //(*n) = 4;
+    set<int>::iterator z(x.begin());
+    set<int>::const_iterator n(z);
 }
 TEST(iterators, const_iterator_equality) {
-    my_set<int> x;
+    set<int> x;
 
     x.insert(5);
     x.insert(3);
@@ -226,18 +273,252 @@ TEST(iterators, const_iterator_equality) {
     x.insert(20);
     x.insert(30);
 
-    my_set<int>::iterator i(x.begin());
-    my_set<int>::const_iterator j(x.begin());
+    set<int>::iterator i(x.begin());
+    set<int>::const_iterator j(x.begin());
     EXPECT_TRUE(i == j && j == i);
     EXPECT_FALSE(++i == j || j == ++i);
 }
 
 TEST(swaps, swap_empty) {
-    my_set<int> x;
-    my_set<int> y;
+    set<int> x;
+    set<int> y;
     x.insert(2);
-    swap(x,y);
+    swap(x, y);
     EXPECT_FALSE(y.empty());
-    swap(x,y);
+    swap(x, y);
     EXPECT_FALSE(x.empty());
+}
+
+TEST(correctness, swap) {
+    set<int> c1, c2;
+    mass_push_back(c1, {1, 2, 3, 4});
+    mass_push_back(c2, {5, 6, 7, 8});
+    swap(c1, c2);
+    auto a_it = c1.begin();
+    auto b_it = c2.begin();
+    for (; a_it != c1.end() && b_it != c2.end(); ++a_it, ++b_it) {
+             std::cout<<*a_it<<" ";
+        //ASSERT_EQ(*a_it, *b_it);
+    }
+     std::cout<<std::endl;
+    expect_eq(c1, {5, 6, 7, 8});
+    expect_eq(c2, {1, 2, 3, 4});
+}
+
+TEST(correctness, swap_self) {
+    set<int> c1;
+    mass_push_back(c1, {1, 2, 3, 4});
+    swap(c1, c1);
+}
+
+TEST(correctness, swap_empty1) {
+    set<int> c1, c2;
+    mass_push_back(c1, {1, 2, 3, 4});
+    swap(c1, c2);
+    EXPECT_TRUE(c1.empty());
+    expect_eq(c2, {1, 2, 3, 4});
+    swap(c1, c2);
+    expect_eq(c1, {1, 2, 3, 4});
+    EXPECT_TRUE(c2.empty());
+}
+
+TEST(correctness, swap_empty_empty) {
+    set<int> c1, c2;
+    swap(c1, c2);
+}
+
+TEST(correctness, swap_empty_self) {
+    set<int> c1;
+    swap(c1, c1);
+}
+
+TEST(correctness, clear_empty) {
+    set<int> c;
+    c.clear();
+    EXPECT_TRUE(c.empty());
+    c.clear();
+    EXPECT_TRUE(c.empty());
+    c.clear();
+    EXPECT_TRUE(c.empty());
+}
+
+TEST(correctness, clear) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 4});
+    c.clear();
+    EXPECT_TRUE(c.empty());
+    EXPECT_EQ(c.begin(), c.end());
+    mass_push_back(c, {5, 6, 7, 8});
+    expect_eq(c, {5, 6, 7, 8});
+}
+
+TEST(correctness, erase_begin) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 4});
+    c.erase(c.begin());
+    expect_eq(c, {2, 3, 4});
+}
+
+TEST(correctness, erase_middle) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 4});
+    c.erase(std::next(c.begin(), 2));
+    expect_eq(c, {1, 2, 4});
+}
+
+TEST(correctness, erase_end_s) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 4});
+    c.erase(std::prev(c.end()));
+    expect_eq(c, {1, 2, 3});
+}
+
+TEST(correctness, erase_iterators) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 4});
+
+    set<int>::iterator i2 = c.begin();
+    ++i2;
+    set<int>::iterator i3 = i2;
+    ++i3;
+    set<int>::iterator i4 = i3;
+    ++i4;
+
+    c.erase(i3);
+    --i4;
+    ++i2;
+    EXPECT_EQ(2, *i4);
+    EXPECT_EQ(4, *i2);
+}
+
+TEST(correctness, insert_begin) {
+
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 4});
+    c.insert(0);
+    expect_eq(c, {0, 1, 2, 3, 4});
+}
+
+TEST(correctness, lower_bound_end) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 10});
+    EXPECT_EQ(c.lower_bound(11), c.end());
+}
+
+TEST(correctness, upper_bound_end) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 10});
+    EXPECT_EQ(c.upper_bound(10), c.end());
+}
+
+TEST(correctness, lower_bound_empty) {
+    set<int> c;
+    EXPECT_EQ(c.lower_bound(11), c.end());
+}
+
+TEST(correctness, upper_bound_empty) {
+    set<int> c;
+    EXPECT_EQ(c.upper_bound(10), c.end());
+}
+
+TEST(correctness, lower_bound) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 10});
+    EXPECT_EQ(c.lower_bound(10), (--c.end()));
+}
+
+TEST(correctness, upper_bound) {
+    set<int> c;
+    mass_push_back(c, {1, 2, 3, 10});
+    EXPECT_EQ(c.upper_bound(3), (--c.end()));
+}
+
+template <typename T>
+T const& as_const(T& obj)
+{
+    return obj;
+}
+
+TEST(correctness, iterator_conversions)
+{
+    set<int> c;
+    set<int>::const_iterator i1 = c.begin();
+    set<int>::iterator i2 = c.end();
+    EXPECT_TRUE(i1 == i1);
+    EXPECT_TRUE(i1 == i2);
+    EXPECT_TRUE(i2 == i1);
+    EXPECT_TRUE(i2 == i2);
+    EXPECT_FALSE(i1 != i1);
+    EXPECT_FALSE(i1 != i2);
+    EXPECT_FALSE(i2 != i1);
+    EXPECT_FALSE(i2 != i2);
+
+    EXPECT_TRUE(as_const(i1) == i1);
+    EXPECT_TRUE(as_const(i1) == i2);
+    EXPECT_TRUE(as_const(i2) == i1);
+    EXPECT_TRUE(as_const(i2) == i2);
+    EXPECT_FALSE(as_const(i1) != i1);
+    EXPECT_FALSE(as_const(i1) != i2);
+    EXPECT_FALSE(as_const(i2) != i1);
+    EXPECT_FALSE(as_const(i2) != i2);
+
+    EXPECT_TRUE(i1 == as_const(i1));
+    EXPECT_TRUE(i1 == as_const(i2));
+    EXPECT_TRUE(i2 == as_const(i1));
+    EXPECT_TRUE(i2 == as_const(i2));
+    EXPECT_FALSE(i1 != as_const(i1));
+    EXPECT_FALSE(i1 != as_const(i2));
+    EXPECT_FALSE(i2 != as_const(i1));
+    EXPECT_FALSE(i2 != as_const(i2));
+
+    EXPECT_TRUE(as_const(i1) == as_const(i1));
+    EXPECT_TRUE(as_const(i1) == as_const(i2));
+    EXPECT_TRUE(as_const(i2) == as_const(i1));
+    EXPECT_TRUE(as_const(i2) == as_const(i2));
+    EXPECT_FALSE(as_const(i1) != as_const(i1));
+    EXPECT_FALSE(as_const(i1) != as_const(i2));
+    EXPECT_FALSE(as_const(i2) != as_const(i1));
+    EXPECT_FALSE(as_const(i2) != as_const(i2));
+}
+
+TEST(correctness, iterators_postfix)
+{
+
+    set<int> s;
+    mass_push_back(s, {1, 2, 3});
+    set<int>::iterator i = s.begin();
+    EXPECT_EQ(1, *i);
+    set<int>::iterator j = i++;
+    EXPECT_EQ(2, *i);
+    EXPECT_EQ(1, *j);
+    j = i++;
+    EXPECT_EQ(3, *i);
+    EXPECT_EQ(2, *j);
+    j = i++;
+    EXPECT_EQ(s.end(), i);
+    EXPECT_EQ(3, *j);
+    j = i--;
+    EXPECT_EQ(3, *i);
+    EXPECT_EQ(s.end(), j);
+}
+
+TEST(correctness, const_iterators_postfix)
+{
+
+    set<int> s;
+    mass_push_back(s, {1, 2, 3});
+    set<int>::const_iterator i = s.begin();
+    EXPECT_EQ(1, *i);
+    set<int>::const_iterator j = i++;
+    EXPECT_EQ(2, *i);
+    EXPECT_EQ(1, *j);
+    j = i++;
+    EXPECT_EQ(3, *i);
+    EXPECT_EQ(2, *j);
+    j = i++;
+    EXPECT_TRUE(i == s.end());
+    EXPECT_EQ(3, *j);
+    j = i--;
+    EXPECT_EQ(3, *i);
+    EXPECT_TRUE(j == s.end());
 }

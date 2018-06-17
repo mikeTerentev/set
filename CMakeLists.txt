@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address,undefined
 add_executable(main
         mm/main.cpp
         testing.cpp
-        my_set.h
+        set.h
         gtest/gtest-all.cc
         gtest/gtest.h
         gtest/gtest_main.cc)
