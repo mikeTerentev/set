@@ -160,8 +160,7 @@ public:
 public:
     friend void swap<T>(set &frst, set &sec) noexcept;
 
-    set() noexcept {
-    }
+    set() noexcept {}
 
     set(set const &other) : set() {
         for (const auto &node : other) {

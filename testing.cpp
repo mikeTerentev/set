@@ -32,16 +32,6 @@ void expect_eq(It i1, It e1, std::initializer_list<T> elems) {
         ++i2;
     }
 }
-TEST(eqv, eq) {
-    set<int> s;
-    s.insert(1);
-    s.insert(3);
-    s.insert(4);
-    set<int> s2 = s;
-    ASSERT_EQ(*s.begin(), *s.begin());
-    ASSERT_EQ(*++s2.begin(), *++s2.begin());
-    ASSERT_EQ(*--s2.end(), *--s2.end());
-}
 
 template<typename C, typename T>
 void expect_eq(C const &c, std::initializer_list<T> elems) {
@@ -106,6 +96,20 @@ TEST(correctness, 3_4_5) {
     for (; a_it != a.end() && b_it != b.end(); ++a_it, ++b_it) {
         EXPECT_EQ(*b_it, *a_it);
     }
+}
+
+TEST(iterators, iterator_const) {
+    set<int> s;
+    s.insert(1);
+    const set<int>::iterator i = s.begin();
+    EXPECT_EQ(1, *i);
+}
+
+TEST(correctness, erase5) {
+    set<int> s;
+    mass_push_back(s, {5, 2, 10, 6, 14, 7, 8});
+    s.erase(s.find(5));
+    expect_eq(s, {2, 6, 7, 8, 10, 14});
 }
 
 TEST(correctness, reverse_iterator_rbeg_to_rend) {
@@ -683,3 +687,29 @@ TEST(correctness, swap_self_e) {
     ASSERT_EQ(1, *s.begin());
     ASSERT_EQ(3, *++s.begin());
 }
+
+struct dummy {
+    int x;
+
+    dummy() = delete;
+    dummy(int x) : x(x) {}
+
+    friend bool operator<(const dummy &a, const dummy &b) { return a.x < b.x; }
+    friend bool operator==(const dummy &a, const dummy &b) { return a.x == b.x; }
+};
+
+TEST(correctness, no_def_constructor) {
+    set<dummy> s;
+    s.insert(dummy(1));
+
+    ASSERT_EQ(1, (*s.begin()).x);
+}
+
+/*TEST(erase, erase_!) {
+    set<int> s;
+    s.insert(1);
+    s.insert(3);
+
+    5381279 10 11 12
+    erase(find(8));
+}*/
