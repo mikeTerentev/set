@@ -159,7 +159,7 @@ public:
     set() noexcept {
     }
 
-    set(set const &other) : Neutral() {
+    set(set const &other) {
         root.l = makeNode(dynamic_cast<Element *>(other.root.l), root_ptr);
     }
 

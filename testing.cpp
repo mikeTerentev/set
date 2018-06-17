@@ -78,6 +78,7 @@ TEST(correctness, erase_end) {
 
 TEST(correctness, empty) {
     set<int> s;
+    set<int> a = s;
     ASSERT_TRUE(s.empty());
 }
 
