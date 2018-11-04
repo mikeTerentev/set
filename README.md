@@ -1,2 +1,2 @@
 # set
-My realisation of exception-safty Set.
+My realisation of exception-safety Set.
