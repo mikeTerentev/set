@@ -1,0 +1,78 @@
+{
+  "lights": [
+    {
+      "id": "light_living_main",
+      "name": "Люстра",
+      "room": "Гостиная",
+      "on": false,
+      "brightness": 70,
+      "color": "#FFFFFF"
+    },
+    {
+      "id": "light_living_floor",
+      "name": "Торшер",
+      "room": "Гостиная",
+      "on": false,
+      "brightness": 70,
+      "color": "#FFF5E0"
+    },
+    {
+      "id": "light_bedroom_main",
+      "name": "Люстра",
+      "room": "Спальня",
+      "on": false,
+      "brightness": 60,
+      "color": "#FFFFFF"
+    },
+    {
+      "id": "light_bedroom_bedside",
+      "name": "Прикроватная лампа",
+      "room": "Спальня",
+      "on": false,
+      "brightness": 30,
+      "color": "#FFE0B0"
+    },
+    {
+      "id": "light_kitchen_main",
+      "name": "Потолочный свет",
+      "room": "Кухня",
+      "on": false,
+      "brightness": 100,
+      "color": "#FFFFFF"
+    },
+    {
+      "id": "light_hallway",
+      "name": "Свет в коридоре",
+      "room": "Коридор",
+      "on": false,
+      "brightness": 70,
+      "color": "#FFFFFF"
+    }
+  ],
+  "blinds": [
+    {
+      "id": "blind_living_left",
+      "name": "Жалюзи левые",
+      "room": "Гостиная",
+      "position": 0
+    },
+    {
+      "id": "blind_living_right",
+      "name": "Жалюзи правые",
+      "room": "Гостиная",
+      "position": 0
+    },
+    {
+      "id": "blind_bedroom",
+      "name": "Жалюзи",
+      "room": "Спальня",
+      "position": 0
+    },
+    {
+      "id": "blind_kitchen",
+      "name": "Жалюзи",
+      "room": "Кухня",
+      "position": 0
+    }
+  ]
+}
